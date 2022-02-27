@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,17 +13,18 @@
 		2D337DE42565A40A0005E3BC /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9FA3A425605EA100009857 /* Screen.swift */; };
 		2D337DE52565A40A0005E3BC /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D337DA62565A17A0005E3BC /* App.swift */; };
 		2D337DF82565A7630005E3BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2D337DD52565A3CF0005E3BC /* Assets.xcassets */; };
-		2D337DFB2565A9220005E3BC /* example_world.json in Resources */ = {isa = PBXBuildFile; fileRef = 2DF72C85256541B000B90276 /* example_world.json */; };
+		2D3977A127C832DA002D6600 /* WAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3977A027C832DA002D6600 /* WAD.swift */; };
+		2D3977A227C832DA002D6600 /* WAD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D3977A027C832DA002D6600 /* WAD.swift */; };
+		2D58E1E027CE2169002DE98D /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 2D58E1DF27CE2169002DE98D /* OrderedCollections */; };
+		2D58E1E127CE23FC002DE98D /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 2DFE1D57256D2D5400FA0BC6 /* Assets */; };
+		2D58E1E427CE2944002DE98D /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 2DFE1D57256D2D5400FA0BC6 /* Assets */; };
 		2D96ECA225764A1E0028FD7C /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D96ECA125764A1E0028FD7C /* Renderer.swift */; };
 		2D96ECA325764A1E0028FD7C /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D96ECA125764A1E0028FD7C /* Renderer.swift */; };
 		2D9FA3A525605EA100009857 /* Screen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9FA3A425605EA100009857 /* Screen.swift */; };
 		2D9FA3A725605EA300009857 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2D9FA3A625605EA300009857 /* Assets.xcassets */; };
 		2D9FA3B625605EB800009857 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D9FA3B525605EB800009857 /* Engine.swift */; };
-		2DC3D5352571394E00ABA91F /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 2DFE1D57256D2D5400FA0BC6 /* Assets */; };
-		2DEBC3DE256D254C00669EFC /* preprocess.py in Resources */ = {isa = PBXBuildFile; fileRef = 2DEBC3DB256D254C00669EFC /* preprocess.py */; };
+		2DE8E16427CC3C31003EB0C2 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 2DE8E16327CC3C31003EB0C2 /* OrderedCollections */; };
 		2DF72C842564A0E500B90276 /* Geometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF72C832564A0E500B90276 /* Geometry.swift */; };
-		2DF72C86256541B000B90276 /* example_world.json in Resources */ = {isa = PBXBuildFile; fileRef = 2DF72C85256541B000B90276 /* example_world.json */; };
-		2DFE1D5B256D2D5900FA0BC6 /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 2DFE1D57256D2D5400FA0BC6 /* Assets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,16 +32,15 @@
 		2D337DCF2565A3CD0005E3BC /* Goom iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Goom iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D337DD52565A3CF0005E3BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2D337DDA2565A3CF0005E3BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2D3977A027C832DA002D6600 /* WAD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WAD.swift; sourceTree = "<group>"; };
 		2D96ECA125764A1E0028FD7C /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
-		2D9FA39F25605EA100009857 /* Goom macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Goom macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2D9FA39F25605EA100009857 /* Goom.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Goom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D9FA3A425605EA100009857 /* Screen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screen.swift; sourceTree = "<group>"; };
 		2D9FA3A625605EA300009857 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2D9FA3AE25605EA300009857 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2D9FA3AF25605EA300009857 /* Goom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Goom.entitlements; sourceTree = "<group>"; };
 		2D9FA3B525605EB800009857 /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
-		2DEBC3DB256D254C00669EFC /* preprocess.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = preprocess.py; sourceTree = "<group>"; };
 		2DF72C832564A0E500B90276 /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
-		2DF72C85256541B000B90276 /* example_world.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = example_world.json; sourceTree = "<group>"; };
 		2DFE1D57256D2D5400FA0BC6 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Assets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -49,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D58E1E027CE2169002DE98D /* OrderedCollections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -56,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DE8E16427CC3C31003EB0C2 /* OrderedCollections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,22 +73,29 @@
 			path = iOS;
 			sourceTree = "<group>";
 		};
+		2D58E1DE27CE2169002DE98D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2D9FA39625605EA000009857 = {
 			isa = PBXGroup;
 			children = (
 				2D9FA3A125605EA100009857 /* Sources */,
-				2DEBC3D8256D254C00669EFC /* Preprocessor */,
 				2DEBC3D1256D24BE00669EFC /* macOS */,
 				2D337DD02565A3CD0005E3BC /* iOS */,
 				2DFE1D57256D2D5400FA0BC6 /* Assets */,
 				2D9FA3A025605EA100009857 /* Products */,
+				2D58E1DE27CE2169002DE98D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
 		2D9FA3A025605EA100009857 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2D9FA39F25605EA100009857 /* Goom macOS.app */,
+				2D9FA39F25605EA100009857 /* Goom.app */,
 				2D337DCF2565A3CD0005E3BC /* Goom iOS.app */,
 			);
 			name = Products;
@@ -100,6 +109,7 @@
 				2D9FA3B525605EB800009857 /* Engine.swift */,
 				2D96ECA125764A1E0028FD7C /* Renderer.swift */,
 				2DF72C832564A0E500B90276 /* Geometry.swift */,
+				2D3977A027C832DA002D6600 /* WAD.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -114,15 +124,6 @@
 			path = macOS;
 			sourceTree = "<group>";
 		};
-		2DEBC3D8256D254C00669EFC /* Preprocessor */ = {
-			isa = PBXGroup;
-			children = (
-				2DF72C85256541B000B90276 /* example_world.json */,
-				2DEBC3DB256D254C00669EFC /* preprocess.py */,
-			);
-			path = Preprocessor;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -131,6 +132,7 @@
 			buildConfigurationList = 2D337DDB2565A3CF0005E3BC /* Build configuration list for PBXNativeTarget "Goom iOS" */;
 			buildPhases = (
 				2D337DCB2565A3CD0005E3BC /* Sources */,
+				2D58E1E327CE271B002DE98D /* ShellScript */,
 				2D337DCC2565A3CD0005E3BC /* Frameworks */,
 				2D337DCD2565A3CD0005E3BC /* Resources */,
 			);
@@ -139,6 +141,9 @@
 			dependencies = (
 			);
 			name = "Goom iOS";
+			packageProductDependencies = (
+				2D58E1DF27CE2169002DE98D /* OrderedCollections */,
+			);
 			productName = "Boom iOS";
 			productReference = 2D337DCF2565A3CD0005E3BC /* Goom iOS.app */;
 			productType = "com.apple.product-type.application";
@@ -148,6 +153,7 @@
 			buildConfigurationList = 2D9FA3B225605EA300009857 /* Build configuration list for PBXNativeTarget "Goom macOS" */;
 			buildPhases = (
 				2D9FA39B25605EA000009857 /* Sources */,
+				2D58E1E227CE2418002DE98D /* ShellScript */,
 				2D9FA39C25605EA000009857 /* Frameworks */,
 				2D9FA39D25605EA000009857 /* Resources */,
 			);
@@ -156,8 +162,11 @@
 			dependencies = (
 			);
 			name = "Goom macOS";
+			packageProductDependencies = (
+				2DE8E16327CC3C31003EB0C2 /* OrderedCollections */,
+			);
 			productName = Boom;
-			productReference = 2D9FA39F25605EA100009857 /* Goom macOS.app */;
+			productReference = 2D9FA39F25605EA100009857 /* Goom.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -186,6 +195,9 @@
 				Base,
 			);
 			mainGroup = 2D9FA39625605EA000009857;
+			packageReferences = (
+				2DE8E16227CC3C31003EB0C2 /* XCRemoteSwiftPackageReference "swift-collections" */,
+			);
 			productRefGroup = 2D9FA3A025605EA100009857 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -201,8 +213,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2D337DFB2565A9220005E3BC /* example_world.json in Resources */,
-				2DFE1D5B256D2D5900FA0BC6 /* Assets in Resources */,
+				2D58E1E427CE2944002DE98D /* Assets in Resources */,
 				2D337DF82565A7630005E3BC /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -211,14 +222,52 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2DEBC3DE256D254C00669EFC /* preprocess.py in Resources */,
-				2DC3D5352571394E00ABA91F /* Assets in Resources */,
-				2DF72C86256541B000B90276 /* example_world.json in Resources */,
+				2D58E1E127CE23FC002DE98D /* Assets in Resources */,
 				2D9FA3A725605EA300009857 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		2D58E1E227CE2418002DE98D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"",
+				"",
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Assets/doom1.wad",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
+		};
+		2D58E1E327CE271B002DE98D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2D337DCB2565A3CD0005E3BC /* Sources */ = {
@@ -229,6 +278,7 @@
 				2D337DE52565A40A0005E3BC /* App.swift in Sources */,
 				2D337DE32565A40A0005E3BC /* Geometry.swift in Sources */,
 				2D96ECA325764A1E0028FD7C /* Renderer.swift in Sources */,
+				2D3977A227C832DA002D6600 /* WAD.swift in Sources */,
 				2D337DE42565A40A0005E3BC /* Screen.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -241,6 +291,7 @@
 				2DF72C842564A0E500B90276 /* Geometry.swift in Sources */,
 				2D9FA3B625605EB800009857 /* Engine.swift in Sources */,
 				2D96ECA225764A1E0028FD7C /* Renderer.swift in Sources */,
+				2D3977A127C832DA002D6600 /* WAD.swift in Sources */,
 				2D337DA72565A17A0005E3BC /* App.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -353,6 +404,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_MODULE_NAME = Goom;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
@@ -409,6 +461,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				PRODUCT_MODULE_NAME = Goom;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_ENFORCE_EXCLUSIVE_ACCESS = "debug-only";
@@ -435,7 +488,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.goom.goom-macos";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Goom;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -460,7 +513,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.goom.goom-macos";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Goom;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -497,6 +550,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2DE8E16227CC3C31003EB0C2 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2D58E1DF27CE2169002DE98D /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2DE8E16227CC3C31003EB0C2 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+		2DE8E16327CC3C31003EB0C2 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2DE8E16227CC3C31003EB0C2 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2D9FA39725605EA000009857 /* Project object */;
 }

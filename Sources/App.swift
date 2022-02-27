@@ -6,7 +6,8 @@ let screenHeight = 256
 class WorldManager: ObservableObject {
     private(set) lazy var world: World? = {
         do {
-            return try World.load()
+            return try loadWad()
+//            return try World.load()
         } catch let error as DecodingError {
             lastErrorDescription = String(describing: error)
         } catch let error as LocalizedError {
