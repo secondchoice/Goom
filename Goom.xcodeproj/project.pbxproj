@@ -248,7 +248,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "ASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
+			shellScript = "mkdir -p \"${SRCROOT}/Assets\"\nASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
 		};
 		2D58E1E327CE271B002DE98D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -265,7 +265,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "ASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
+			shellScript = "mkdir -p \"${SRCROOT}/Assets\"\nASSET=\"${SRCROOT}/Assets/doom1.wad\"\nif [ ! -s \"$ASSET\" ]; then\n  echo \"Downloading doom1.wad\"\n  curl -o \"$ASSET\" \"https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad\"\nelse\n  echo \"doom1.wad already downloaded\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

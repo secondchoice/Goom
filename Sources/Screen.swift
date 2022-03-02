@@ -255,7 +255,10 @@ private class Buffer<T> {
     func copy(fromArray data: [T]) {
         if (data.count != count) { allocate(count: data.count) }
 
-        buffer?.contents().copyMemory(from: data, byteCount: byteCount)
+        data.withUnsafeBytes { ptr in
+            buffer?.contents().copyMemory(from: ptr.baseAddress!, byteCount: byteCount)
+        }
+        
         #if os(macOS)
             buffer?.didModifyRange(0 ..< byteCount)
         #endif
@@ -420,6 +423,7 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
         screenMTKView.owner = owner
         screenMTKView.device = device
         screenMTKView.isPaused = true
+        screenMTKView.enableSetNeedsDisplay = false
         screenMTKView.play()
     }
 

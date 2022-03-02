@@ -152,7 +152,12 @@ struct WorldView: View {
                     ) { result in
                         do {
                             let urls = try result.get()
-                            worldManager.load(url: urls.first!)
+                            if let url = urls.first {
+                                if url.startAccessingSecurityScopedResource() {
+                                    worldManager.load(url: url)
+                                    url.stopAccessingSecurityScopedResource()
+                                }
+                            }
                         }
                         catch {}
                     }
