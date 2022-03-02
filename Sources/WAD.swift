@@ -1594,12 +1594,7 @@ class WAD {
     }
 }
 
-func loadWad() throws -> Goom.World {
-    guard let path = Bundle.main.path(forResource: "Assets/doom1", ofType: "wad") else {
-        throw RuntimeError("Could not find the asset doom1.wad in the application bundle.")
-    }
-
-    let wad = try WAD(fromURL: URL(fileURLWithPath: path))
-    let world = wad.export()
-    return world
+func loadWAD(fromURL url: URL) throws -> Goom.World {
+    let wad = try WAD(fromURL: url)
+    return wad.export()
 }
