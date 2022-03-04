@@ -694,7 +694,7 @@ class WAD {
             tagNumber = try decoder.get(Int16.self)
         }
 
-        func export(usingId id: Int, with exporter: WAD.Exporter) -> Goom.Sector {
+        func export(with exporter: WAD.Exporter) -> Goom.Sector {
             let mapNumber = exporter.mapName.prefix(2).suffix(1)
             let ceilingTexture = exporter.findTexture(
                 named: (Regex(#".*SKY.*"#) ~= ceilingTextureName)
@@ -709,7 +709,6 @@ class WAD {
             }
 
             return Goom.Sector(
-                id: id,
                 ceiling: Goom.Sector.Part(
                     heights: ceilingHeights,
                     texture: ceilingTexture
@@ -853,10 +852,6 @@ class WAD {
                 midTextureName: String,
                 bottomTextureName: String
             ) {
-                // var upperUV = [[ox + length, 0], [ox, 0]]
-                // var middleUV = [[ox + length, 0], [ox, 0]]
-                // var lowerUV = [[ox + length, 0], [ox, 0]]
-
                 let upperU = Space(begin: ox + length, end: ox)
                 let middleU = Space(begin: ox + length, end: ox)
                 let lowerU = Space(begin: ox + length, end: ox)
@@ -995,26 +990,20 @@ class WAD {
                         ? exporter.findTexture(named: base.topTextureName!) : nil,
                     uSpaceStates: [base.upperU, alt.upperU],
                     vSpaceStates: [base.upperV, alt.upperV]
-                    // uSpace: Goom.Space(begin: upperUV[0][0], end: upperUV[1][0]),
-                    // vSpace: Goom.Space(begin: upperUV[0][1], end: upperUV[1][1])
                 ),
                 middle: Goom.Wall.Part(
                     texture: exporter.findTexture(named: base.midTextureName),
                     uSpaceStates: [base.middleU, alt.middleU],
                     vSpaceStates: [base.middleV, alt.middleV]
-                    // uSpace: Goom.Space(begin: middleUV[0][0], end: middleUV[1][0]),
-                    // vSpace: Goom.Space(begin: middleUV[0][1], end: middleUV[1][1])
                 ),
                 bottom: Goom.Wall.Part(
                     texture: exporter.findTexture(named: base.bottomTextureName),
                     uSpaceStates: [base.lowerU, alt.lowerU],
                     vSpaceStates: [base.lowerV, alt.lowerV]
-                    // uSpace: Goom.Space(begin: lowerUV[0][0], end: lowerUV[1][0]),
-                    // vSpace: Goom.Space(begin: lowerUV[0][1], end: lowerUV[1][1])
                 ),
-                frontSector: exporter.findSector(withId: Int(frontSideDef.sectorId))!,
+                frontSector: exporter.sectors[Int(frontSideDef.sectorId)],
                 backSector: backSideDef != nil
-                    ? exporter.findSector(withId: Int(backSideDef!.sectorId)) : nil
+                    ? exporter.sectors[Int(backSideDef!.sectorId)] : nil
             )
             return wall
         }
@@ -1068,8 +1057,8 @@ class WAD {
         }
 
         func exportSectors(with exporter: WAD.Exporter) -> [Goom.Sector] {
-            sectors.enumerated().map { (id, sector) in
-                sector.export(usingId: id, with: exporter)
+            sectors.map {
+                $0.export(with: exporter)
             }
         }
 
@@ -1275,12 +1264,6 @@ class WAD {
             })
         }
 
-        func findSector(withId id: Int) -> Goom.Sector? {
-            return sectors.first(where: {
-                $0.id == id
-            })
-        }
-
         func findNeighbors(ofSector sector: Sector) -> [Sector] {
             var neighbors: [Sector] = []
             for lineDef in self.map.lineDefs {
@@ -1336,16 +1319,6 @@ class WAD {
                 })
             else { return }
 
-            //     ef make_platform_animation(platform_linedef):
-            // platform_type = platform_types[platform_linedef.special_type]
-            // sectors = platform_linedef.map.sectors
-            // platform_sector = next(
-            //     s for s in sectors if s.tag_number == platform_linedef.sector_tag
-            // )
-            // ceiling_height = platform_sector.ceiling_height
-            // floor_height = platform_sector.floor_height
-            // neighbors = platform_sector.neighbors()
-
             let ceilingHeight = platformSector.ceilingHeight
             var floorHeight = platformSector.floorHeight
             let neighbors = exporter.findNeighbors(ofSector: platformSector)
@@ -1360,12 +1333,9 @@ class WAD {
                 break
 
             case "Raise Next Floor":
-                //     # This means that the "high" height is the lowest surrounding floor
-                //     # higher than the platform. If no higher adjacent floor exists no
-                //     # motion will occur.
-                //     floor_height = min(
-                //         [s.floor_height for s in neighbors if s.floor_height > floor_height]
-                //     )
+                // This means that the "high" height is the lowest surrounding floor
+                // higher than the platform. If no higher adjacent floor exists no
+                // motion will occur.
                 floorHeight =
                     neighbors.filter({ $0.floorHeight > floorHeight }).map({ $0.floorHeight }).min()
                     ?? floorHeight
@@ -1379,7 +1349,6 @@ class WAD {
                 // even if the motion is temporarily suspended with a Stop type. No
                 // other floor action can be commanded on the sector after this type
                 // is begun.
-                //     floor_height = max([s.floor_height for s in neighbors + [platform_sector]])
                 floorHeight = (neighbors + [platformSector]).map({ $0.floorHeight }).max()!
 
             case "Stop":
@@ -1390,7 +1359,6 @@ class WAD {
                 // This means that the platforms "low" height is the height of the
                 // lowest surrounding floor, including the platform itself. The
                 // "high" height is the original height of the floor.
-                //     floor_height = min([s.floor_height for s in neighbors + [platform_sector]])
                 floorHeight = (neighbors + [platformSector]).map({ $0.floorHeight }).min()!
 
             case "Ceiling (toggle)":
@@ -1399,7 +1367,6 @@ class WAD {
                 // only used in the instant toggle type that switches the floor
                 // between the ceiling and its original height on each activation.
                 // This is also the ONLY instant platform type.
-                //     floor_height = ceiling_height
                 floorHeight = ceilingHeight
 
             default:
@@ -1477,17 +1444,13 @@ class WAD {
             }
         }
 
-        var goomTextureIds: [String: Int] = [:]
         var goomMaps: [Goom.Map] = []
         let exporter = Exporter(wad: self)
 
         for texture in textures {
-            let id = goomTextureIds.count
-            goomTextureIds[texture.name] = id
             let (pixels, mask) = split(texture.exportPixels(fromWad: self))
             exporter.textures.append(
                 Goom.Texture(
-                    id: id,
                     name: texture.name,
                     pixels: pixels,
                     mask: mask,
@@ -1500,11 +1463,8 @@ class WAD {
         }
 
         for (flatName, flat) in flats {
-            let id = goomTextureIds.count
-            goomTextureIds[flatName] = id
             exporter.textures.append(
                 Goom.Texture(
-                    id: id,
                     name: flatName,
                     pixels: flat.exportPixels(),
                     mask: nil,
@@ -1517,12 +1477,9 @@ class WAD {
         }
 
         for (spriteName, sprite) in sprites {
-            let id = goomTextureIds.count
-            goomTextureIds[spriteName] = id
             let (pixels, mask) = split(sprite.exportPixels())
             exporter.textures.append(
                 Goom.Texture(
-                    id: id,
                     name: spriteName,
                     pixels: pixels,
                     mask: mask,

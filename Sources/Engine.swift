@@ -17,8 +17,8 @@ class RuntimeError: LocalizedError {
 
 // MARK: - Sector
 
-class Sector: Decodable, Identifiable {
-    struct Part: Decodable {
+class Sector {
+    struct Part {
         class State {
             var height: Float
             init(height: Float) { self.height = height }
@@ -28,29 +28,10 @@ class Sector: Decodable, Identifiable {
         let heightStates: [Float]
         let texture: Texture?
 
-        enum CodingKeys: String, CodingKey {
-            case height
-            case altHeight
-            case texture
-        }
-
         init(heights: [Float], texture: Texture?) {
             self.heightStates = heights
             self.texture = texture
             self.state = State(height: heights[0])
-        }
-
-        init(from decoder: Decoder) throws {
-            let builder = try getBuilder(from: decoder)
-            let values = try decoder.container(keyedBy: Sector.Part.CodingKeys.self)
-            var heights = [try values.decode(Float.self, forKey: .height)]
-            if let h = try values.decodeIfPresent(Float.self, forKey: .altHeight) {
-                heights.append(h)
-            }
-            heightStates = heights
-            state = State(height: heightStates[0])
-            let textureId = try values.decode(Int.self, forKey: .texture)
-            texture = builder.textures[textureId]
         }
 
         func set(phase: Float) {
@@ -65,36 +46,19 @@ class Sector: Decodable, Identifiable {
         var height: Float { state.height }
     }
 
-    let id: Int
     let ceiling: Part
     let floor: Part
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case top
-        case bottom
-        case animation
-    }
-
-    init(id: Int, ceiling: Part, floor: Part) {
-        self.id = id
+    init(ceiling: Part, floor: Part) {
         self.ceiling = ceiling
         self.floor = floor
-    }
-
-    required init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: Sector.CodingKeys.self)
-        id = try values.decode(Int.self, forKey: .id)
-        ceiling = try values.decode(Part.self, forKey: .top)
-        floor = try values.decode(Part.self, forKey: .bottom)
-        try getBuilder(from: decoder).sectors[id] = self
     }
 }
 
 // MARK: - Wall
 
-class Wall: Decodable {
-    struct Part: Decodable {
+class Wall {
+    struct Part {
         class State {
             var uSpace: Space
             var vSpace: Space
@@ -108,6 +72,8 @@ class Wall: Decodable {
         let texture: Texture?
         let uSpaceStates: [Space]
         let vSpaceStates: [Space]
+        var uSpace: Space { state.uSpace }
+        var vSpace: Space { state.vSpace }
 
         init(texture: Texture?, uSpaceStates: [Space], vSpaceStates: [Space]) {
             self.texture = texture
@@ -130,32 +96,6 @@ class Wall: Decodable {
                 state.vSpace = vSpaceStates[0]
             }
         }
-
-        enum CodingKeys: String, CodingKey {
-            case uv
-            case altUv
-            case texture
-        }
-
-        init(from decoder: Decoder) throws {
-            let builder = try getBuilder(from: decoder)
-            let values = try decoder.container(keyedBy: Wall.Part.CodingKeys.self)
-            let uv = try values.decode(Segment.self, forKey: .uv)
-            var uSpaceStates_ = [Space(begin: uv.v1.x, end: uv.v2.x)]
-            var vSpaceStates_ = [Space(begin: uv.v1.y, end: uv.v2.y)]
-            if let uv = try values.decodeIfPresent(Segment.self, forKey: .altUv) {
-                uSpaceStates_.append(Space(begin: uv.v1.x, end: uv.v2.x))
-                vSpaceStates_.append(Space(begin: uv.v1.y, end: uv.v2.y))
-            }
-            uSpaceStates = uSpaceStates_
-            vSpaceStates = vSpaceStates_
-            state = State(uSpace: uSpaceStates[0], vSpace: vSpaceStates[0])
-            let textureId = try values.decode(Int.self, forKey: .texture)
-            texture = builder.textures[textureId]
-        }
-
-        var uSpace: Space { state.uSpace }
-        var vSpace: Space { state.vSpace }
     }
 
     let base: Segment
@@ -164,15 +104,6 @@ class Wall: Decodable {
     let bottom: Part
     let leftSector: Sector
     let rightSector: Sector?
-
-    enum CodingKeys: String, CodingKey {
-        case base
-        case top
-        case middle
-        case bottom
-        case frontSector
-        case backSector
-    }
 
     init(
         base: Segment,
@@ -188,44 +119,6 @@ class Wall: Decodable {
         self.bottom = bottom
         leftSector = frontSector
         rightSector = backSector
-    }
-
-    required init(from decoder: Decoder) throws {
-        let builder = try getBuilder(from: decoder)
-        let values = try decoder.container(keyedBy: Wall.CodingKeys.self)
-        base = try values.decode(Segment.self, forKey: .base)
-        top = try values.decode(Part.self, forKey: .top)
-        middle = try values.decode(Part.self, forKey: .middle)
-        bottom = try values.decode(Part.self, forKey: .bottom)
-        let frontSectorId = try values.decode(Int.self, forKey: .frontSector)
-        let backSectorId = try values.decode(Int?.self, forKey: .backSector)
-        if let lf = builder.sectors[frontSectorId] {
-            leftSector = lf
-        }
-        else {
-            throw DecodingError.dataCorrupted(
-                .init(
-                    codingPath: decoder.codingPath,
-                    debugDescription: "Left floor ID \(frontSectorId) does not exist."
-                )
-            )
-        }
-        if backSectorId != nil {
-            if let rf = builder.sectors[backSectorId!] {
-                rightSector = rf
-            }
-            else {
-                throw DecodingError.dataCorrupted(
-                    .init(
-                        codingPath: decoder.codingPath,
-                        debugDescription: "Back floor ID \(backSectorId!) does not exist."
-                    )
-                )
-            }
-        }
-        else {
-            rightSector = nil
-        }
     }
 
     func groundHeight(under position: Vector, atPhase _: Float) -> Float {
@@ -245,7 +138,7 @@ class Wall: Decodable {
 
 // MARK: - Thing
 
-class Thing: Decodable {
+class Thing {
     var position: Vector
     var angle: Float
     let textures: [Texture?]
@@ -272,21 +165,6 @@ class Thing: Decodable {
         let z1 = position.y - dz
         let z2 = position.y + dz
         return Segment(v1: [x1, z1], v2: [x2, z2])
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case position
-        case angle
-        case textures
-    }
-
-    required init(from decoder: Decoder) throws {
-        let builder = try getBuilder(from: decoder)
-        let values = try decoder.container(keyedBy: Thing.CodingKeys.self)
-        position = try values.decode(Vector.self, forKey: .position)
-        angle = try values.decode(Float.self, forKey: .angle)
-        let textureIds = try values.decode([Int].self, forKey: .textures)
-        textures = textureIds.map { builder.textures[$0] }
     }
 }
 
@@ -328,8 +206,7 @@ final class ThingFragment: Segmentable {
 
 // MARK: - Texture
 
-class Texture: Decodable, Identifiable {
-    let id: Int
+class Texture {
     let name: String
     var pixels: [[UInt8]]
     var mask: [[UInt8]]?
@@ -339,7 +216,6 @@ class Texture: Decodable, Identifiable {
     let isSky: Bool
 
     init(
-        id: Int,
         name: String,
         pixels: [[UInt8]],
         mask: [[UInt8]]?,
@@ -348,7 +224,6 @@ class Texture: Decodable, Identifiable {
         offset: Vector,
         isSky: Bool
     ) {
-        self.id = id
         self.name = name
         self.pixels = pixels
         self.mask = mask
@@ -357,90 +232,11 @@ class Texture: Decodable, Identifiable {
         self.offset = offset
         self.isSky = isSky
     }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case offset
-        case isSky
-    }
-
-    required init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: Texture.CodingKeys.self)
-        id = try values.decode(Int.self, forKey: .id)
-        name = try values.decode(String.self, forKey: .name)
-        offset = try values.decode(Vector.self, forKey: .offset)
-        isSky = try values.decode(Bool.self, forKey: .isSky)
-        if let path = Bundle.main.path(forResource: "Assets/" + name, ofType: "png"),
-            let src = CGDataProvider(filename: path),
-            let img = CGImage(
-                pngDataProviderSource: src,
-                decode: nil,
-                shouldInterpolate: false,
-                intent: .defaultIntent
-            ),
-            let data = img.dataProvider?.data
-        {
-            let buffer = UnsafeBufferPointer(
-                start: CFDataGetBytePtr(data),
-                count: CFDataGetLength(data)
-            )
-            width = img.width
-            height = img.height
-            pixels = []
-            for c in 0..<width {
-                let column = stride(from: c, to: c + width * height, by: width).map {
-                    UInt8(buffer[$0])
-                }
-                pixels.append(column)
-            }
-        }
-        else {
-            width = 64
-            height = 64
-            pixels = []
-            for c in 0..<width {
-                let column = (0..<height).map { r in
-                    ((r & 32) ^ (c & 32)) != 0 ? UInt8(0) : UInt8(1)
-                }
-                pixels.append(column)
-            }
-        }
-        if let path = Bundle.main.path(forResource: "Assets/" + name + "_mask", ofType: "png"),
-            let src = CGDataProvider(filename: path),
-            let img = CGImage(
-                pngDataProviderSource: src,
-                decode: nil,
-                shouldInterpolate: false,
-                intent: .defaultIntent
-            ),
-            let data = img.dataProvider?.data
-        {
-            let buffer = UnsafeBufferPointer(
-                start: CFDataGetBytePtr(data),
-                count: CFDataGetLength(data)
-            )
-            precondition(width == img.width)
-            precondition(height == img.height)
-            mask = []
-            for c in 0..<width {
-                let column = stride(from: c, to: c + width * height, by: width).map {
-                    UInt8(buffer[$0])
-                }
-                mask!.append(column)
-            }
-        }
-        else {
-            mask = nil
-        }
-
-        try getBuilder(from: decoder).textures[id] = self
-    }
 }
 
 // MARK: - Player
 
-class Player: Decodable {
+class Player {
     var position: Vector = .init(x: 0, y: -2)
     var angle: Float = 0
     var height: Float = 0
@@ -450,23 +246,12 @@ class Player: Decodable {
     let maxAngularSpeed: Float = 0.06
     let hegightFromGround: Float = 45
 
-    enum CodingKeys: String, CodingKey {
-        case position
-        case angle
-    }
-
     init(
         position: Vector = .init(x: 0, y: -2),
         angle: Float = 0
     ) {
         self.position = position
         self.angle = angle
-    }
-
-    required init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: Player.CodingKeys.self)
-        position = try values.decode(Vector.self, forKey: .position)
-        angle = try values.decode(Float.self, forKey: .angle)
     }
 
     func toCamera(vector v: Vector) -> Vector {
@@ -536,7 +321,7 @@ func removeThingFragments(in node: BSP<WallFragment>.Node) {
 
 // MARK: - Map
 
-class Map: Decodable {
+class Map {
     let name: String
     let player: Player
     let sectors: [Sector]
@@ -559,25 +344,6 @@ class Map: Decodable {
         bsp = BSP(segments: walls.map { WallFragment(ofWall: $0) })
     }
 
-    enum CodingKeys: String, CodingKey {
-        case name
-        case player
-        case sectors
-        case walls
-        case things
-    }
-
-    required init(from decoder: Decoder) throws {
-        try getBuilder(from: decoder).sectors.removeAll()
-        let values = try decoder.container(keyedBy: Map.CodingKeys.self)
-        name = try values.decode(String.self, forKey: .name)
-        sectors = try values.decode([Sector].self, forKey: .sectors)
-        walls = try values.decode([Wall].self, forKey: .walls)
-        player = try values.decode(Player.self, forKey: .player)
-        things = try values.decode([Thing].self, forKey: .things)
-        bsp = BSP(segments: walls.map { WallFragment(ofWall: $0) })
-    }
-
     func placeThings(atTime time: Float) {
         if let root = bsp.root {
             removeThingFragments(in: root)
@@ -594,7 +360,7 @@ class Map: Decodable {
 
 // MARK: - World
 
-class World: Decodable {
+class World {
     let maps: [Map]
     let textures: [Texture]
     var palettes: [[UInt32]]
@@ -603,44 +369,15 @@ class World: Decodable {
 
     weak var map: Map?
 
-    enum CodingKeys: String, CodingKey {
-        case maps
-        case textures
-        case palettes
-    }
-
     init(
         maps: [Map],
         textures: [Texture],
         palettes: [[UInt32]]
     ) {
         self.maps = maps
+        self.map = maps.first
         self.textures = textures
         self.palettes = palettes
-        self.map = maps.first
-    }
-
-    class Builder {
-        var sectors: [Int: Sector] = [:]
-        var textures: [Int: Texture] = [:]
-    }
-
-    required init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: World.CodingKeys.self)
-        textures = try values.decode([Texture].self, forKey: .textures)
-        maps = try values.decode([Map].self, forKey: .maps)
-        palettes = try values.decode([[UInt32]].self, forKey: .palettes)
-        map = maps[0]
-    }
-
-    static func load() throws -> World {
-        guard let path = Bundle.main.path(forResource: "Assets/world", ofType: "json") else {
-            throw RuntimeError("Could not find the asset world.json in the application bundle.")
-        }
-        let json = try Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
-        let decoder = JSONDecoder()
-        decoder.userInfo[.worldBuilder] = Builder()
-        return try decoder.decode(World.self, from: json)
     }
 
     func fill(x: Int, y1: Int, y2: Int, value: UInt32, in screen: Screen) {
@@ -660,20 +397,4 @@ class World: Decodable {
     func update(with joypad: Joypad) {
         map?.player.update(with: joypad)
     }
-}
-
-extension CodingUserInfoKey {
-    fileprivate static let worldBuilder = CodingUserInfoKey(rawValue: "worldBuilder")!
-}
-
-private func getBuilder(from decoder: Decoder) throws -> World.Builder {
-    guard let builder = decoder.userInfo[.worldBuilder] as? World.Builder else {
-        throw DecodingError.dataCorrupted(
-            .init(
-                codingPath: decoder.codingPath,
-                debugDescription: "Decoder incorrectly initialized."
-            )
-        )
-    }
-    return builder
 }
