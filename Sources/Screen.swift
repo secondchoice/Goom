@@ -1,22 +1,22 @@
 // Screen.swift
 
+import MetalKit
+import SwiftUI
+
 #if os(macOS)
     import Cocoa
 #else
     import UIKit
 #endif
 
-import MetalKit
-import SwiftUI
-
-private extension Float {
-    init(_ x: Bool) {
+extension Float {
+    fileprivate init(_ x: Bool) {
         self = x ? 1.0 : 0.0
     }
 }
 
-private extension Vector {
-    init(_ v: CGPoint) {
+extension Vector {
+    fileprivate init(_ v: CGPoint) {
         x = Float(v.x)
         y = Float(v.y)
     }
@@ -48,7 +48,9 @@ class Joypad {
         let sl = keys.strafeLeft || (keys.left && keys.strafe)
         let sr = keys.strafeRight || (keys.right && keys.strafe)
         let speed = keys.run ? Float(1.0) : Float(0.5)
-        if !keys.forward || !keys.backward { walk = speed * (Float(keys.forward) - Float(keys.backward)) }
+        if !keys.forward || !keys.backward {
+            walk = speed * (Float(keys.forward) - Float(keys.backward))
+        }
         if !r || !l { turn = speed * (Float(r) - Float(l)) }
         if !sr || !sl { strafe = speed * (Float(sr) - Float(sl)) }
     }
@@ -105,8 +107,8 @@ class Screen {
     }
 
     func fill() {
-        for y in 0 ..< height {
-            for x in 0 ..< width {
+        for y in 0..<height {
+            for x in 0..<width {
                 pixels[width * y + x] = ((y + x) % 8 < 3) ? 0xFFFF_FFFF : 0
             }
         }
@@ -138,13 +140,19 @@ class ScreenMTKView: MTKView {
 
         func play() {
             if displayLink == nil {
-                NotificationCenter.default.addObserver(self,
-                                                       selector: #selector(windowWillClose),
-                                                       name: NSWindow.willCloseNotification,
-                                                       object: window)
+                NotificationCenter.default.addObserver(
+                    self,
+                    selector: #selector(windowWillClose),
+                    name: NSWindow.willCloseNotification,
+                    object: window
+                )
                 CVDisplayLinkCreateWithActiveCGDisplays(&displayLink)
                 if let displayLink = displayLink {
-                    CVDisplayLinkSetOutputCallback(displayLink, ScreenMTKView.callback, Unmanaged.passUnretained(self).toOpaque())
+                    CVDisplayLinkSetOutputCallback(
+                        displayLink,
+                        ScreenMTKView.callback,
+                        Unmanaged.passUnretained(self).toOpaque()
+                    )
                 }
             }
             if let displayLink = displayLink { CVDisplayLinkStart(displayLink) }
@@ -183,7 +191,9 @@ class ScreenMTKView: MTKView {
         override func touchesMoved(_ touches: Set<UITouch>, with _: UIEvent?) {
             if let touch = touches.first {
                 let currentPoint = touch.location(in: self)
-                owner?.worldManager.joypad.interpret(vector: Vector(currentPoint) - Vector(touchBeganPoint))
+                owner?.worldManager.joypad.interpret(
+                    vector: Vector(currentPoint) - Vector(touchBeganPoint)
+                )
             }
         }
 
@@ -191,13 +201,18 @@ class ScreenMTKView: MTKView {
             if let touch = touches.first {
                 let currentPoint = touch.location(in: self)
                 touchBeganPoint = currentPoint
-                owner?.worldManager.joypad.interpret(vector: Vector(currentPoint) - Vector(touchBeganPoint))
+                owner?.worldManager.joypad.interpret(
+                    vector: Vector(currentPoint) - Vector(touchBeganPoint)
+                )
             }
         }
 
         func play() {
             if displayLink == nil {
-                displayLink = UIScreen.main.displayLink(withTarget: self, selector: #selector(callback))
+                displayLink = UIScreen.main.displayLink(
+                    withTarget: self,
+                    selector: #selector(callback)
+                )
                 displayLink?.add(to: RunLoop.main, forMode: RunLoop.Mode.default)
             }
             displayLink?.isPaused = false
@@ -231,7 +246,7 @@ private class Buffer<T> {
     var count: Int = 0
     var byteCount: Int { count * MemoryLayout<T>.stride }
     var buffer: MTLBuffer? = nil
-    
+
     init(device: MTLDevice?) {
         self.device = device
     }
@@ -240,30 +255,30 @@ private class Buffer<T> {
         self.count = count
 
         #if os(macOS)
-        buffer = device?.makeBuffer(
-            length: byteCount,
-            options: [.storageModeManaged, .cpuCacheModeWriteCombined]
-        )
+            buffer = device?.makeBuffer(
+                length: byteCount,
+                options: [.storageModeManaged, .cpuCacheModeWriteCombined]
+            )
         #else
-        buffer = device?.makeBuffer(
-            length: byteCount,
-            options: [.cpuCacheModeWriteCombined]
-        )
+            buffer = device?.makeBuffer(
+                length: byteCount,
+                options: [.cpuCacheModeWriteCombined]
+            )
         #endif
     }
-        
+
     func copy(fromArray data: [T]) {
-        if (data.count != count) { allocate(count: data.count) }
+        if data.count != count { allocate(count: data.count) }
 
         data.withUnsafeBytes { ptr in
             buffer?.contents().copyMemory(from: ptr.baseAddress!, byteCount: byteCount)
         }
-        
+
         #if os(macOS)
-            buffer?.didModifyRange(0 ..< byteCount)
+            buffer?.didModifyRange(0..<byteCount)
         #endif
     }
-    
+
     func copy(_ data: T) {
         copy(fromArray: [data])
     }
@@ -278,7 +293,7 @@ class MapMTK {
     private var drawableSize = CGSize()
     private var currentMap: Map? = nil
     private var numSegments = 0
-    
+
     init(_ screenMtk: ScreenMTKViewCoordinator) {
         self.screenMtk = screenMtk
         mapVertexBuffer = .init(device: self.screenMtk.device)
@@ -291,10 +306,9 @@ class MapMTK {
         var pos: vector_float4
         var color: vector_float4
     }
-    
+
     private let transformationDataSize = MemoryLayout<float4x4>.stride
 
-    
     func makeRenderPassDescriptor(drawable: CAMetalDrawable) -> MTLRenderPassDescriptor {
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
@@ -302,11 +316,11 @@ class MapMTK {
         renderPassDescriptor.colorAttachments[0].storeAction = .store
         return renderPassDescriptor
     }
-        
+
     func draw(in view: MTKView, with cbu: MTLCommandBuffer) {
         guard let map = screenMtk.owner.worldManager.world?.map else { return }
         if map !== currentMap { load(map: map) }
-        
+
         let sx = 0.3 / Float(3000)
         let sy = sx * Float(screenMtk.drawableSize.width) / Float(screenMtk.drawableSize.height)
         let tx = map.player.position.x
@@ -314,44 +328,70 @@ class MapMTK {
         let a = map.player.angle
         let sa = sin(a)
         let ca = cos(a)
-        let center = matrix_float4x4(rows:[
+        let center = matrix_float4x4(rows: [
             SIMD4<Float>(1, 0, 0, -tx),
             SIMD4<Float>(0, 1, 0, -ty),
             SIMD4<Float>(0, 0, 1, 0),
-            SIMD4<Float>(0, 0, 0, 1)
+            SIMD4<Float>(0, 0, 0, 1),
         ])
-        let rotate = matrix_float4x4(rows:[
+        let rotate = matrix_float4x4(rows: [
             SIMD4<Float>(sa, -ca, 0, 0),
-            SIMD4<Float>(ca,  sa, 0, 0),
+            SIMD4<Float>(ca, sa, 0, 0),
             SIMD4<Float>(0, 0, 1, 0),
-            SIMD4<Float>(0, 0, 0, 1)
+            SIMD4<Float>(0, 0, 0, 1),
         ])
-        let scale = matrix_float4x4(rows:[
+        let scale = matrix_float4x4(rows: [
             SIMD4<Float>(sx, 0, 0, 0.75),
             SIMD4<Float>(0, sy, 0, 0.5),
             SIMD4<Float>(0, 0, 1, 0),
-            SIMD4<Float>(0, 0, 0, 1)
+            SIMD4<Float>(0, 0, 0, 1),
         ])
         transformationBuffer.copy(scale * rotate * center)
-        
+
         let ps = Float(150)
         let triangle = [
-            MapVertex(pos: SIMD4<Float>(tx+ps*(ca), ty+ps*(sa), 0.5, 1), color: SIMD4<Float>(0,0,1,1)),
-            MapVertex(pos: SIMD4<Float>(tx+ps*(-ca/4-sa/2), ty+ps*(-sa/4+ca/2), 0.5, 1), color: SIMD4<Float>(0,0,1,1)),
-            MapVertex(pos: SIMD4<Float>(tx+ps*(-ca/4+sa/2), ty+ps*(-sa/4-ca/2), 0.5, 1), color: SIMD4<Float>(0,0,1,1)),
+            MapVertex(
+                pos: SIMD4<Float>(tx + ps * (ca), ty + ps * (sa), 0.5, 1),
+                color: SIMD4<Float>(0, 0, 1, 1)
+            ),
+            MapVertex(
+                pos: SIMD4<Float>(
+                    tx + ps * (-ca / 4 - sa / 2),
+                    ty + ps * (-sa / 4 + ca / 2),
+                    0.5,
+                    1
+                ),
+                color: SIMD4<Float>(0, 0, 1, 1)
+            ),
+            MapVertex(
+                pos: SIMD4<Float>(
+                    tx + ps * (-ca / 4 + sa / 2),
+                    ty + ps * (-sa / 4 - ca / 2),
+                    0.5,
+                    1
+                ),
+                color: SIMD4<Float>(0, 0, 1, 1)
+            ),
         ]
         playerVertexBuffer.copy(fromArray: triangle)
 
         guard
             let drw = view.currentDrawable,
-            let rce = cbu.makeRenderCommandEncoder(descriptor: makeRenderPassDescriptor(drawable: drw)),
+            let rce = cbu.makeRenderCommandEncoder(
+                descriptor: makeRenderPassDescriptor(drawable: drw)
+            ),
             let rps = renderPipelineState
         else { return }
 
         rce.setRenderPipelineState(rps)
         rce.setVertexBuffer(mapVertexBuffer.buffer, offset: 0, index: 0)
         rce.setVertexBuffer(transformationBuffer.buffer, offset: 0, index: 1)
-        rce.drawPrimitives(type: .line, vertexStart: 0, vertexCount: 2, instanceCount: mapVertexBuffer.count/2)
+        rce.drawPrimitives(
+            type: .line,
+            vertexStart: 0,
+            vertexCount: 2,
+            instanceCount: mapVertexBuffer.count / 2
+        )
         rce.setVertexBuffer(playerVertexBuffer.buffer, offset: 0, index: 0)
         rce.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         rce.endEncoding()
@@ -359,22 +399,22 @@ class MapMTK {
 
     private func initMetal() {
         let shaders = """
-        #include <metal_stdlib>
-        using namespace metal;
-        struct MapVertex {
-            float4 pos [[position]];
-            float4 color;
-        };
-        vertex MapVertex map_vertex_func(uint id [[vertex_id]],
-                                         uint instance_id [[instance_id]],
-                                         constant float4x4 &transformation [[buffer(1)]],
-                                         constant MapVertex *vertices [[buffer(0)]]) {
-            return MapVertex{ transformation * vertices[id + instance_id*2].pos, vertices[id + instance_id*2].color };
-        }
-        fragment float4 map_fragment_func(MapVertex point [[stage_in]]) {
-            return point.color;
-        }
-        """
+            #include <metal_stdlib>
+            using namespace metal;
+            struct MapVertex {
+                float4 pos [[position]];
+                float4 color;
+            };
+            vertex MapVertex map_vertex_func(uint id [[vertex_id]],
+                                             uint instance_id [[instance_id]],
+                                             constant float4x4 &transformation [[buffer(1)]],
+                                             constant MapVertex *vertices [[buffer(0)]]) {
+                return MapVertex{ transformation * vertices[id + instance_id*2].pos, vertices[id + instance_id*2].color };
+            }
+            fragment float4 map_fragment_func(MapVertex point [[stage_in]]) {
+                return point.color;
+            }
+            """
 
         let library = try! screenMtk.device?.makeLibrary(source: shaders, options: nil)
         let rpd = MTLRenderPipelineDescriptor()
@@ -386,11 +426,13 @@ class MapMTK {
 
     func load(map: Map) {
         currentMap = map
-        let color = SIMD4<Float>(1,1,1,1)
-        let vertices = map.walls.flatMap { [
-            MapVertex(pos: [$0.base.v1.x, $0.base.v1.y, 0.5, 1], color: color),
-            MapVertex(pos: [$0.base.v2.x, $0.base.v2.y, 0.5, 1], color: color)
-        ] }
+        let color = SIMD4<Float>(1, 1, 1, 1)
+        let vertices = map.walls.flatMap {
+            [
+                MapVertex(pos: [$0.base.v1.x, $0.base.v1.y, 0.5, 1], color: color),
+                MapVertex(pos: [$0.base.v2.x, $0.base.v2.y, 0.5, 1], color: color),
+            ]
+        }
         mapVertexBuffer.copy(fromArray: vertices)
     }
 }
@@ -406,7 +448,7 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
     private var samplerState: MTLSamplerState?
     private var textureSemaphore = DispatchSemaphore(value: 1)
     fileprivate var drawableSize = CGSize()
-    
+
     private var map: MapMTK? = nil
 
     init(_ owner: ScreenView) {
@@ -448,12 +490,14 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
             let rps = renderPipelineState
         else { return }
 
-        tex.replace(region: MTLRegionMake2D(0, 0, screen.width, screen.height),
-                    mipmapLevel: 0,
-                    slice: 0,
-                    withBytes: screen.pixels.baseAddress!,
-                    bytesPerRow: screen.bytesPerRow,
-                    bytesPerImage: 0)
+        tex.replace(
+            region: MTLRegionMake2D(0, 0, screen.width, screen.height),
+            mipmapLevel: 0,
+            slice: 0,
+            withBytes: screen.pixels.baseAddress!,
+            bytesPerRow: screen.bytesPerRow,
+            bytesPerImage: 0
+        )
 
         rce.setRenderPipelineState(rps)
         rce.setVertexBuffer(vertexBuffer.buffer, offset: 0, index: 0)
@@ -480,23 +524,23 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
         commandQueue = device?.makeCommandQueue()
 
         let shaders = """
-        #include <metal_stdlib>
-        using namespace metal;
-        struct Vertex {
-            float4 pos [[position]];
-            float2 uv;
-        };
-        vertex Vertex vertex_func(uint id [[vertex_id]],
-                                  constant Vertex *vertices [[buffer(0)]]) {
-            return vertices[id];
-        }
-        fragment half4 fragment_func(Vertex point [[stage_in]],
-                                     texture2d<float, access::sample> texture [[texture(0)]],
-                                     sampler sampler [[sampler(0)]]) {
-            float4 color = texture.sample(sampler, point.uv);
-            return half4(color);
-        }
-        """
+            #include <metal_stdlib>
+            using namespace metal;
+            struct Vertex {
+                float4 pos [[position]];
+                float2 uv;
+            };
+            vertex Vertex vertex_func(uint id [[vertex_id]],
+                                      constant Vertex *vertices [[buffer(0)]]) {
+                return vertices[id];
+            }
+            fragment half4 fragment_func(Vertex point [[stage_in]],
+                                         texture2d<float, access::sample> texture [[texture(0)]],
+                                         sampler sampler [[sampler(0)]]) {
+                float4 color = texture.sample(sampler, point.uv);
+                return half4(color);
+            }
+            """
 
         let library = try! device?.makeLibrary(source: shaders, options: nil)
         let rpd = MTLRenderPipelineDescriptor()
@@ -531,10 +575,12 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
         let scale = min(frameWidth / screenWidth, frameHeight / screenHeight)
         let w = Float((scale * screenWidth) / frameWidth)
         let h = Float((scale * screenHeight) / frameHeight)
-        let vertices = [Vertex(pos: [-w, +h, 0.0, 1.0], uv: [0, 0]),
-                          Vertex(pos: [+w, +h, 0.0, 1.0], uv: [1, 0]),
-                          Vertex(pos: [-w, -h, 0.0, 1.0], uv: [0, 1]),
-                          Vertex(pos: [+w, -h, 0.0, 1.0], uv: [1, 1])]
+        let vertices = [
+            Vertex(pos: [-w, +h, 0.0, 1.0], uv: [0, 0]),
+            Vertex(pos: [+w, +h, 0.0, 1.0], uv: [1, 0]),
+            Vertex(pos: [-w, -h, 0.0, 1.0], uv: [0, 1]),
+            Vertex(pos: [+w, -h, 0.0, 1.0], uv: [1, 1]),
+        ]
         vertexBuffer.copy(fromArray: vertices)
     }
 }

@@ -193,7 +193,7 @@ let doorTypes:
         137: ("Reg", "S1", "Yell", .fast, "--", false, "Open and Stay Open"),
     ]
 
-enum FloorTarget  {
+enum FloorTarget {
     case lowestNeighborFloor
     case highestNeighborFloor
     case highestNeighborFloorPlus8
@@ -274,7 +274,7 @@ let floorTypes:
         239: ("Ext", "W1", "--", .na, "TxTy", "Num", false, false, .none),
     ]
 
-enum CeilingTarget  {
+enum CeilingTarget {
     case floor
     case highestNeighborCeiling
     case eightAboveFloor
@@ -283,7 +283,6 @@ enum CeilingTarget  {
     case lowestNeighborCeiling
     case none
 }
-
 
 let ceilingTypes:
     [Int: (
@@ -331,8 +330,12 @@ let platformTypes:
         95: ("Reg", "WR", "--", .slow, "Tx0", "Trg", false, "Raise Next Floor"),
         22: ("Reg", "W1", "--", .slow, "Tx0", "Trg", false, "Raise Next Floor"),
         47: ("Reg", "G1", "--", .slow, "Tx0", "Trg", false, "Raise Next Floor"),
-        181: ("Ext", "SR", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"),
-        162: ("Ext", "S1", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"),
+        181: (
+            "Ext", "SR", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"
+        ),
+        162: (
+            "Ext", "S1", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"
+        ),
         87: ("Reg", "WR", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"),
         53: ("Reg", "W1", "3s", .slow, "None", "--", false, "Lowest and Highest Floor (perpetual)"),
         182: ("Ext", "SR", "--", .na, "----", "--", nil, "Stop"),

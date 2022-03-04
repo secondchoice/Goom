@@ -213,8 +213,10 @@ extension Segment: Decodable {
 extension Segment: ExpressibleByArrayLiteral {
     init(arrayLiteral: [Float]...) {
         assert(arrayLiteral.count == 2, "Initializing a segment requires two vectors.")
-        self.init(v1: .init(x: arrayLiteral[0][0], y: arrayLiteral[0][1]),
-                  v2: .init(x: arrayLiteral[1][0], y: arrayLiteral[1][1]))
+        self.init(
+            v1: .init(x: arrayLiteral[0][0], y: arrayLiteral[0][1]),
+            v2: .init(x: arrayLiteral[1][0], y: arrayLiteral[1][1])
+        )
     }
 }
 
@@ -268,17 +270,20 @@ extension Line {
         let f2 = evaluate(at: segment.v2)
         if f1 >= 0 {
             if f2 >= 0 {
-                return (left: 0 ..< 1, right: 1 ..< 1)
-            } else {
-                let lambda = f1 / (f1 - f2)
-                return (left: 0 ..< lambda, right: lambda ..< 1)
+                return (left: 0..<1, right: 1..<1)
             }
-        } else {
-            if f2 <= 0 {
-                return (left: 0 ..< 0, right: 0 ..< 1)
-            } else {
+            else {
                 let lambda = f1 / (f1 - f2)
-                return (left: lambda ..< 1, right: 0 ..< lambda)
+                return (left: 0..<lambda, right: lambda..<1)
+            }
+        }
+        else {
+            if f2 <= 0 {
+                return (left: 0..<0, right: 0..<1)
+            }
+            else {
+                let lambda = f1 / (f1 - f2)
+                return (left: lambda..<1, right: 0..<lambda)
             }
         }
     }
@@ -348,18 +353,24 @@ class BSP<T: Segmentable> {
 
         static func build(primitives: [T]) -> Node? {
             if primitives.count == 0 { return nil }
-            let pivotIndex = Int.random(in: 0 ..< primitives.count, using: &seededGenerator)
+            let pivotIndex = Int.random(in: 0..<primitives.count, using: &seededGenerator)
             let pivot = primitives[pivotIndex]
             var leftSubtree: [T] = []
             var rightSubtree: [T] = []
-            for s in 0 ..< primitives.count {
+            for s in 0..<primitives.count {
                 if s == pivotIndex { continue }
                 let primitive = primitives[s]
-                let (left, right) = Line(containing: pivot.asSegment).cut(segment: primitive.asSegment)
+                let (left, right) = Line(containing: pivot.asSegment).cut(
+                    segment: primitive.asSegment
+                )
                 if !left.isEmpty { leftSubtree.append(primitive.slice(part: left)) }
                 if !right.isEmpty { rightSubtree.append(primitive.slice(part: right)) }
             }
-            return Node(primitive: pivot, left: build(primitives: leftSubtree), right: build(primitives: rightSubtree))
+            return Node(
+                primitive: pivot,
+                left: build(primitives: leftSubtree),
+                right: build(primitives: rightSubtree)
+            )
         }
 
         /// Visit the BSP tree.
@@ -376,10 +387,18 @@ class BSP<T: Segmentable> {
         /// * If `action` returns `.more` the visit continues as normal.
         /// * If `action` returns `.cull` the visit continues, but the remaining subtree at this node is skipped.
         /// * If `action` returns `.end` the visit terminates immediately.
-        @discardableResult func visit(from center: Vector, nearestFirst: Bool, action: (T) -> VisitState) -> VisitState {
+        @discardableResult func visit(
+            from center: Vector,
+            nearestFirst: Bool,
+            action: (T) -> VisitState
+        ) -> VisitState {
             let centerIsOntheLeft = (primitive.asSegment.side(ofPoint: center) == .left)
             let leftFirst = (nearestFirst == centerIsOntheLeft)
-            if let state = (leftFirst ? left : right)?.visit(from: center, nearestFirst: nearestFirst, action: action) {
+            if let state = (leftFirst ? left : right)?.visit(
+                from: center,
+                nearestFirst: nearestFirst,
+                action: action
+            ) {
                 if state == .end { return .end }
             }
             switch action(primitive) {
@@ -387,7 +406,11 @@ class BSP<T: Segmentable> {
             case .cull: return .more
             case .more: break
             }
-            return (leftFirst ? right : left)?.visit(from: center, nearestFirst: nearestFirst, action: action) ?? .more
+            return (leftFirst ? right : left)?.visit(
+                from: center,
+                nearestFirst: nearestFirst,
+                action: action
+            ) ?? .more
         }
     }
 }

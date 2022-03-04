@@ -30,13 +30,17 @@ extension World {
         let screen: Screen
         var width: Int { screen.width }
         var height: Int { screen.height }
-        let x0c: Float /// Image coordinates of the leftmost pixel
-        let y0c: Float /// Image coordiantes of the topmost pixel
+        // Image coordinates of the leftmost pixel
+        let x0c: Float
+        // Image coordiantes of the topmost pixel
+        let y0c: Float
         let focalLength: Float
         let minDepth = Float(0.01)
         let maxDepth = Float(1000)
-        var apertureTop: [Int] /// Top vertical pixel index of open span
-        var apertureBottom: [Int] /// Bottom vertical pixel of open span + 1
+        // Top vertical pixel index of open span
+        var apertureTop: [Int]
+        // Bottom vertical pixel of open span + 1
+        var apertureBottom: [Int]
         var palettes: [[UInt32]] = []
 
         init(in screen: Screen) {
@@ -63,7 +67,17 @@ extension World {
         }
     }
 
-    private static func vfill(_ screen: Screen, _ xp: Int, _ ytp: Int, _ ybp: Int, _ column: [UInt8], _ mask: [UInt8]?, _ palette: [UInt32], _ vt: Float, _ dv: Float) {
+    private static func vfill(
+        _ screen: Screen,
+        _ xp: Int,
+        _ ytp: Int,
+        _ ybp: Int,
+        _ column: [UInt8],
+        _ mask: [UInt8]?,
+        _ palette: [UInt32],
+        _ vt: Float,
+        _ dv: Float
+    ) {
         @inline(__always) func kernel(_ height: Int, _ mod: (Int, Int) -> Int = mod) {
             var v = Int(vt * Float(1 << 16))
             let dv = Int(dv * Float(1 << 16))
@@ -101,7 +115,14 @@ extension World {
         let apertureTop: [Int]
         let apertureBottom: [Int]
 
-        init(in view: View, texture: Texture, base: Segment, uSpace: Space, vSpace: Space, heights: (bottom: Float, top: Float)) {
+        init(
+            in view: View,
+            texture: Texture,
+            base: Segment,
+            uSpace: Space,
+            vSpace: Space,
+            heights: (bottom: Float, top: Float)
+        ) {
             self.texture = texture
             self.heights = heights
             self.uSpace = uSpace
@@ -118,7 +139,7 @@ extension World {
 
             let xlp = Int(ceiling: min(x1c, x2c) - view.x0c)
             let xrp = Int(ceiling: max(x1c, x2c) - view.x0c)
-            xrangep = xlp ..< xrp
+            xrangep = xlp..<xrp
 
             apertureTop = Array(view.apertureTop[xrangep])
             apertureBottom = Array(view.apertureBottom[xrangep])
@@ -158,10 +179,13 @@ extension World {
         }
     }
 
-    func postpone(thingsInFragment fragment: WallFragment, forSide side: Side, in view: View) -> [Drawable] {
+    func postpone(thingsInFragment fragment: WallFragment, forSide side: Side, in view: View)
+        -> [Drawable]
+    {
         guard let map = map else { return [] }
         var postponed: [Drawable] = []
-        let thingFragments = side == .left ? fragment.leftThingFragments : fragment.rightThingFragments
+        let thingFragments =
+            side == .left ? fragment.leftThingFragments : fragment.rightThingFragments
 
         let posedThingFragments = thingFragments.map {
             (thingFragment: $0, depth: map.player.toCamera(vector: $0.thing.position).y)
@@ -181,12 +205,23 @@ extension World {
 
             let us = Space(begin: 0, end: Float(texture.width)).slice(part: range)
             let vs = Space(begin: Float(texture.height), end: 0)
-            postponed.append(Drawable(in: view, texture: texture, base: base, uSpace: us, vSpace: vs, heights: heights))
+            postponed.append(
+                Drawable(
+                    in: view,
+                    texture: texture,
+                    base: base,
+                    uSpace: us,
+                    vSpace: vs,
+                    heights: heights
+                )
+            )
         }
         return postponed
     }
 
-    func draw(fragment: WallFragment, in view: View, appending postponed: inout [Drawable]) -> BSP<WallFragment>.VisitState {
+    func draw(fragment: WallFragment, in view: View, appending postponed: inout [Drawable])
+        -> BSP<WallFragment>.VisitState
+    {
         guard let map = map else { return .end }
         let screen = view.screen
         let wall = fragment.wall
@@ -194,7 +229,11 @@ extension World {
         let wallFacesPlayer = frontSide == .left
 
         // Postpone drawing things in front of this plane.
-        postponed += postpone(thingsInFragment: fragment, forSide: wallFacesPlayer ? .left : .right, in: view)
+        postponed += postpone(
+            thingsInFragment: fragment,
+            forSide: wallFacesPlayer ? .left : .right,
+            in: view
+        )
 
         // Obtain the wall fragment base in the camera coordinates.
         var base = map.player.toCamera(segment: wall.base.slice(part: fragment.range))
@@ -226,7 +265,13 @@ extension World {
         }
 
         // Postpone drawing thing behind this plane.
-        defer { postponed += postpone(thingsInFragment: fragment, forSide: wallFacesPlayer ? .right : .left, in: view) }
+        defer {
+            postponed += postpone(
+                thingsInFragment: fragment,
+                forSide: wallFacesPlayer ? .right : .left,
+                in: view
+            )
+        }
 
         // Clip the wall fragment base to the frustrum.
         var range = fragment.range
@@ -236,7 +281,7 @@ extension World {
         // Project the wall fragment base to the image plane.
         let depth1 = base.v1.y
         let depth2 = base.v2.y
-        let inverseDepthSpace = Space(begin: 1/depth1, end: 1/depth2)
+        let inverseDepthSpace = Space(begin: 1 / depth1, end: 1 / depth2)
         let x1c = view.focalLength * base.v1.x * inverseDepthSpace.begin
         let x2c = view.focalLength * base.v2.x * inverseDepthSpace.end
         let xlp = Int(ceiling: min(x1c, x2c) - view.x0c)
@@ -247,7 +292,7 @@ extension World {
         assert(xlp <= xrp)
         assert(xrp <= view.width)
 
-        for xp in xlp ..< xrp {
+        for xp in xlp..<xrp {
             let xc = Float(xp) + view.x0c
             let alpha = (xc - x1c) / (x2c - x1c)
             let inverseDepth = inverseDepthSpace[alpha]
@@ -257,13 +302,19 @@ extension World {
 
             let lambda = (range.upperBound - range.lowerBound) * lambdaFragment + range.lowerBound
 
-            func project(y: Float) -> Float { view.focalLength * inverseDepth * (y - map.player.height) }
+            func project(y: Float) -> Float {
+                view.focalLength * inverseDepth * (y - map.player.height)
+            }
 
             @inline(__always) func getAperture(_ ytc: Float, _ ybc: Float) -> (Int, Int) {
                 let ytp = max(Int(ceiling: view.y0c - ytc), view.apertureTop[xp])
                 let ybp = min(Int(ceiling: view.y0c - ybc), view.apertureBottom[xp])
-                if ytp <= view.apertureTop[xp] { view.apertureTop[xp] = max(view.apertureTop[xp], ybp) }
-                if ybp >= view.apertureBottom[xp] { view.apertureBottom[xp] = min(view.apertureBottom[xp], ytp) }
+                if ytp <= view.apertureTop[xp] {
+                    view.apertureTop[xp] = max(view.apertureTop[xp], ybp)
+                }
+                if ybp >= view.apertureBottom[xp] {
+                    view.apertureBottom[xp] = min(view.apertureBottom[xp], ytp)
+                }
                 return (ytp, ybp)
             }
 
@@ -317,14 +368,25 @@ extension World {
                 let u0 = (sa * xcf + ca) / depthScaling
                 let v0 = (-ca * xcf + sa) / depthScaling
 
-                @inline(__always) func fill(_ width: Int, _ height: Int, _ mod: (Int, Int) -> Int = mod) {
-                    for pixelIndex in stride(from: xp + ytp * screen.width, to: xp + ybp * screen.width, by: screen.width) {
+                @inline(__always) func fill(
+                    _ width: Int,
+                    _ height: Int,
+                    _ mod: (Int, Int) -> Int = mod
+                ) {
+                    for pixelIndex in stride(
+                        from: xp + ytp * screen.width,
+                        to: xp + ybp * screen.width,
+                        by: screen.width
+                    ) {
                         let depth = depthScaling / inverseDepth
                         let u = depth * u0 + map.player.position.x
-                        let v = -(depth * v0 + map.player.position.y) // textures are indexed from the top down
+                        let v = -(depth * v0 + map.player.position.y)  // textures are indexed from the top down
                         let up = mod(Int(flooring: u), width)
                         let vp = mod(Int(flooring: v), height)
-                        let lightLevel = max(0, min(Int(depth - scaledMinDepth), palettes.count - 1))
+                        let lightLevel = max(
+                            0,
+                            min(Int(depth - scaledMinDepth), palettes.count - 1)
+                        )
                         let color = texture.pixels[up][vp]
                         let value = palettes[lightLevel][Int(color)]
                         screen.pixels[pixelIndex] = value
@@ -334,7 +396,8 @@ extension World {
 
                 if texture.height == 64, texture.width == 64 {
                     fill(64, 64, mod2)
-                } else {
+                }
+                else {
                     fill(texture.width, texture.height)
                 }
             }
@@ -352,17 +415,22 @@ extension World {
                     draw(flat: wall.leftSector.floor, frontFloor, bottom)
                     draw(wall: wall.middle, frontCeiling, frontFloor)
                 }
-            } else {
+            }
+            else {
                 // Draw a wall with an open mid section.
-                let (frontSector, backSector) = (frontSide == .left) ? (wall.leftSector, wall.rightSector!) : (wall.rightSector!, wall.leftSector)
+                let (frontSector, backSector) =
+                    (frontSide == .left)
+                    ? (wall.leftSector, wall.rightSector!) : (wall.rightSector!, wall.leftSector)
                 let frontCeiling = project(y: frontSector.ceiling.height)
                 let frontFloor = project(y: frontSector.floor.height)
                 let backCeiling = project(y: backSector.ceiling.height)
                 let backFloor = project(y: backSector.floor.height)
 
                 // Special case for sky.
-                let skipTopWall = (wall.top.texture == nil) && (frontSector.ceiling.texture?.isSky ?? false)
-                let skipTopFlat = skipTopWall && (frontSector.ceiling.height < backSector.ceiling.height)
+                let skipTopWall =
+                    (wall.top.texture == nil) && (frontSector.ceiling.texture?.isSky ?? false)
+                let skipTopFlat =
+                    skipTopWall && (frontSector.ceiling.height < backSector.ceiling.height)
 
                 // Draw both flats first as, when the aperture is negative (e.g. elevator),
                 // they may occlude the walls.
@@ -378,12 +446,23 @@ extension World {
         // Draw a semi-transparent mid wall.
         if wall.rightSector != nil, let texture = wall.middle.texture {
             let heights = (
-                max(wall.leftSector.floor.height, wall.rightSector!.floor.height) - map.player.height,
-                min(wall.leftSector.ceiling.height, wall.rightSector!.ceiling.height) - map.player.height
+                max(wall.leftSector.floor.height, wall.rightSector!.floor.height)
+                    - map.player.height,
+                min(wall.leftSector.ceiling.height, wall.rightSector!.ceiling.height)
+                    - map.player.height
             )
             let us = wall.middle.uSpace.slice(part: range)
             let vs = wall.middle.vSpace
-            postponed.append(Drawable(in: view, texture: texture, base: base, uSpace: us, vSpace: vs, heights: heights))
+            postponed.append(
+                Drawable(
+                    in: view,
+                    texture: texture,
+                    base: base,
+                    uSpace: us,
+                    vSpace: vs,
+                    heights: heights
+                )
+            )
         }
 
         return .more
@@ -393,11 +472,17 @@ extension World {
         guard let map = map else { return }
 
         // Reposition the player on top of the floor under them.
-        map.bsp.root?.visit(from: map.player.position, nearestFirst: true, action: {
-            fragment in
-            map.player.height = fragment.wall.groundHeight(under: map.player.position, atPhase: self.phase) + map.player.hegightFromGround
-            return .end
-        })
+        map.bsp.root?.visit(
+            from: map.player.position,
+            nearestFirst: true,
+            action: {
+                fragment in
+                map.player.height =
+                    fragment.wall.groundHeight(under: map.player.position, atPhase: self.phase)
+                    + map.player.hegightFromGround
+                return .end
+            }
+        )
 
         // Reposition the things.
         map.placeThings(atTime: phase)
@@ -408,16 +493,22 @@ extension World {
         let maxNumDrawn = 2000
         var checkPeriodMask = 1
 
-        map.bsp.root?.visit(from: map.player.position, nearestFirst: true, action: {
-            fragment in
-            let state = draw(fragment: fragment, in: view, appending: &postponed)
-            numDrawn += 1
-            if numDrawn & checkPeriodMask == 0 {
-                if zip(view.apertureTop, view.apertureBottom).allSatisfy({ $0.0 >= $0.1 }) { return .end }
-                checkPeriodMask = (checkPeriodMask << 1) | 1
+        map.bsp.root?.visit(
+            from: map.player.position,
+            nearestFirst: true,
+            action: {
+                fragment in
+                let state = draw(fragment: fragment, in: view, appending: &postponed)
+                numDrawn += 1
+                if numDrawn & checkPeriodMask == 0 {
+                    if zip(view.apertureTop, view.apertureBottom).allSatisfy({ $0.0 >= $0.1 }) {
+                        return .end
+                    }
+                    checkPeriodMask = (checkPeriodMask << 1) | 1
+                }
+                return (numDrawn >= maxNumDrawn) ? .end : state
             }
-            return (numDrawn >= maxNumDrawn) ? .end : state
-        })
+        )
 
         for drawable in postponed.reversed() { drawable.draw(in: view, withPalettes: palettes) }
 
