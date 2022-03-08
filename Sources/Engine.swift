@@ -367,7 +367,12 @@ class World {
     var phase = Float(0)
     var time = Float(0)
 
+    var screenshotActionsQueue: [([CGImage]) -> Void] = []
     weak var map: Map?
+
+    func takeScreenshot(_ action: @escaping ([CGImage]) -> Void) {
+        screenshotActionsQueue.insert(action, at: 0)
+    }
 
     init(
         maps: [Map],

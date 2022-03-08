@@ -2,6 +2,7 @@
 
 import MetalKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 #if os(macOS)
     import Cocoa
@@ -109,10 +110,82 @@ class Screen {
     func fill() {
         for y in 0..<height {
             for x in 0..<width {
-                pixels[width * y + x] = ((y + x) % 8 < 3) ? 0xFFFF_FFFF : 0
+                let ax = x % 8 < 4
+                let ay = y % 8 < 4
+                pixels[width * y + x] = (ax != ay) ? 0xFFFF_6961 : 0xFFF5_84f6
             }
         }
     }
+
+    func toCGImage() -> CGImage? {
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo(
+            rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue
+                | CGBitmapInfo.byteOrder32Little.rawValue
+        )
+        let bitsPerComponent = 8
+        let bitsPerPixel = 32
+
+        return pixels.withMemoryRebound(to: UInt8.self) { data -> CGImage? in
+            guard
+                let cfData = CFDataCreate(
+                    kCFAllocatorDefault,
+                    data.baseAddress,
+                    byteCount
+                )
+            else { return nil }
+
+            guard
+                let dataProvider = CGDataProvider(
+                    data: cfData
+                )
+            else { return nil }
+
+            return CGImage(
+                width: width,
+                height: height,
+                bitsPerComponent: bitsPerComponent,
+                bitsPerPixel: bitsPerPixel,
+                bytesPerRow: width * bytesPerPixel,
+                space: rgbColorSpace,
+                bitmapInfo: bitmapInfo,
+                provider: dataProvider,
+                decode: nil,
+                shouldInterpolate: false,
+                intent: .defaultIntent
+            )
+        }
+    }
+}
+
+func save(cgImages images: [CGImage]) -> Data? {
+    let fileProperties =
+        [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary
+    let gifProperties =
+        [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: Float(0.125)]]
+        as CFDictionary
+    guard let data = CFDataCreateMutable(nil, 0),
+        let destination = CGImageDestinationCreateWithData(
+            data,
+            UTType.gif.identifier as CFString,
+            images.count,
+            nil
+        )
+    else { return nil }
+
+    CGImageDestinationSetProperties(destination, fileProperties)
+
+    for image in images {
+        CGImageDestinationAddImage(destination, image, gifProperties)
+    }
+
+    return CGImageDestinationFinalize(destination) ? data as Data : nil
+}
+
+func checksum<T>(of data: UnsafeBufferPointer<T>) -> T where T: FixedWidthInteger {
+    var sum: T = 0
+    for value in data { sum ^= value }
+    return sum
 }
 
 // MARK: - UI

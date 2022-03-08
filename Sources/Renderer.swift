@@ -1,6 +1,7 @@
 //  Renderer.swift
 //  Goom
 
+import CoreGraphics
 import Foundation
 
 extension Int {
@@ -26,6 +27,7 @@ extension Int {
 }
 
 extension World {
+
     class View {
         let screen: Screen
         var width: Int { screen.width }
@@ -493,6 +495,25 @@ extension World {
         let maxNumDrawn = 2000
         var checkPeriodMask = 1
 
+        var screenShots: [CGImage] = []
+        var screenShotChecksum: UInt32 = 1
+
+        func takeScreenshot() {
+            guard self.screenshotActionsQueue.count > 0, screenShots.count < 100 else { return }
+            let sum = checksum(of: UnsafeBufferPointer<UInt32>(screen.pixels))
+            if sum != screenShotChecksum {
+                screenShotChecksum = sum
+                if let image = screen.toCGImage() {
+                    screenShots.append(image)
+                }
+            }
+        }
+
+        if self.screenshotActionsQueue.count > 0 {
+            screen.fill()
+        }
+        takeScreenshot()
+
         map.bsp.root?.visit(
             from: map.player.position,
             nearestFirst: true,
@@ -506,11 +527,15 @@ extension World {
                     }
                     checkPeriodMask = (checkPeriodMask << 1) | 1
                 }
+                takeScreenshot()
                 return (numDrawn >= maxNumDrawn) ? .end : state
             }
         )
 
-        for drawable in postponed.reversed() { drawable.draw(in: view, withPalettes: palettes) }
+        for drawable in postponed.reversed() {
+            drawable.draw(in: view, withPalettes: palettes)
+            takeScreenshot()
+        }
 
         // Prepare animations for the next cycle.
         time += 1 / 60.0
@@ -525,6 +550,10 @@ extension World {
         map.sectors.forEach {
             $0.floor.set(phase: phase)
             $0.ceiling.set(phase: phase)
+        }
+
+        if let action = self.screenshotActionsQueue.popLast() {
+            action(screenShots)
         }
     }
 }

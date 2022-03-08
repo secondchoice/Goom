@@ -16,6 +16,7 @@ class WorldManager: ObservableObject {
     let screen: Screen = Screen(width: screenWidth, height: screenHeight)
     let joypad = Joypad()
     private(set) var lastErrorDescription = ""
+    var screenshotQueue: [(CGImage) -> Void] = []
 
     var currentMapIndex: Int = 0 {
         willSet(index) {
@@ -51,8 +52,30 @@ class WorldManager: ObservableObject {
     }
 }
 
+struct ImageFile: FileDocument {
+    static var readableContentTypes = [UTType.gif]
+    var images: [CGImage] = []
+
+    init(_ images: [CGImage]) {
+        self.images = images
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        throw RuntimeError("Cannot load screenshots.")
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        guard let data = save(cgImages: images)
+        else { throw RuntimeError("Cannot save screenshot.") }
+        return FileWrapper(regularFileWithContents: data)
+    }
+}
+
 struct WorldView: View {
     @StateObject var worldManager = WorldManager()
+    @State private var isExporting = false
+    @State private var isImporting = false
+    @State private var screenshot: ImageFile? = nil
 
     var mapPicker: some View {
         return Picker(
@@ -88,7 +111,6 @@ struct WorldView: View {
             .navigationBarTitle("Settings")
             .navigationBarHidden(false)
         }
-        @State private var isImporting = false
     #endif
 
     var screen: some View {
@@ -102,49 +124,6 @@ struct WorldView: View {
                         minHeight: 256,
                         maxHeight: .infinity
                     )
-            )
-        }
-        else {
-            return AnyView(Text(worldManager.lastErrorDescription))
-        }
-    }
-
-    var body: some View {
-        #if os(macOS)
-            screen
-                .toolbar {
-                    HStack(alignment: .firstTextBaseline) {
-                        mapPicker
-                            .padding(.top, 6)
-
-                        Button("Open WAD…") {
-                            if let url = showOpenPanel() {
-                                worldManager.load(url: url)
-                            }
-                        }
-                    }
-                }
-        #else
-            NavigationView {
-                screen
-                    .navigationTitle("Goom")
-                    .navigationBarHidden(true)
-                    .toolbar {
-                        ToolbarItemGroup(placement: .bottomBar) {
-                            NavigationLink(
-                                destination: form,
-                                label: {
-                                    Text("Map \(worldManager.currentMapName)").padding(.top, 6)
-                                }
-                            )
-
-                            Button {
-                                isImporting = true
-                            } label: {
-                                Image(systemName: "square.and.arrow.down")
-                            }
-                        }
-                    }
                     .fileImporter(
                         isPresented: $isImporting,
                         allowedContentTypes: [UTType("org.goom.wad")!],
@@ -161,6 +140,71 @@ struct WorldView: View {
                         }
                         catch {}
                     }
+                    .fileExporter(
+                        isPresented: $isExporting,
+                        document: screenshot,
+                        contentType: UTType.gif
+                    ) { result in
+                        screenshot = nil
+                    }
+            )
+        }
+        else {
+            return AnyView(Text(worldManager.lastErrorDescription))
+        }
+    }
+
+    var body: some View {
+        #if os(macOS)
+            screen
+                .toolbar {
+                    HStack(alignment: .firstTextBaseline) {
+                        mapPicker
+                            .padding(.top, 6)
+
+                        Button("Open WAD…") {
+                            isImporting = true
+                        }
+
+                        Button("Save Screenshot…") {
+                            worldManager.world?.takeScreenshot { screenshot = ImageFile($0) }
+                            isExporting = true
+                        }
+                    }
+                }
+        #else
+            NavigationView {
+                screen
+                    .navigationTitle("Goom")
+                    .navigationBarHidden(true)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .bottomBar) {
+                            HStack(alignment: .firstTextBaseline) {
+                                NavigationLink(
+                                    destination: form,
+                                    label: {
+                                        Text("Map \(worldManager.currentMapName)").padding(.top, 6)
+                                    }
+                                )
+
+                                Button {
+                                    worldManager.world?.takeScreenshot {
+                                        screenshot = ImageFile($0)
+                                    }
+                                    isExporting = true
+                                } label: {
+                                    Image(systemName: "camera.fill")
+                                }
+
+                                Button {
+                                    isImporting = true
+                                } label: {
+                                    Image(systemName: "square.and.arrow.down")
+                                }
+                            }
+                        }
+                    }
+
             }
             .navigationViewStyle(StackNavigationViewStyle())
         #endif
