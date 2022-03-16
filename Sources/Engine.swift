@@ -102,8 +102,8 @@ class Wall {
     let top: Part
     let middle: Part
     let bottom: Part
-    let leftSector: Sector
-    let rightSector: Sector?
+    let frontSector: Sector
+    let backSector: Sector?
 
     init(
         base: Segment,
@@ -117,16 +117,16 @@ class Wall {
         self.top = top
         self.middle = middle
         self.bottom = bottom
-        leftSector = frontSector
-        rightSector = backSector
+        self.frontSector = frontSector
+        self.backSector = backSector
     }
 
     func groundHeight(under position: Vector, atPhase _: Float) -> Float {
-        if base.side(ofPoint: position) == .left {
-            return leftSector.floor.state.height
+        if base.side(ofPoint: position) == .right {
+            return frontSector.floor.state.height
         }
         else {
-            if let backFloor = rightSector {
+            if let backFloor = backSector {
                 return backFloor.floor.state.height
             }
             else {
@@ -289,7 +289,12 @@ func place(thingFragment: ThingFragment, in node: BSP<WallFragment>.Node, atPhas
         else {
             node.primitive.leftThingFragments.append(thingFragment)
             if thingFragment.range.contains(0.5) {
-                thingFragment.thing.height = node.primitive.wall.leftSector.floor.height
+                if let backSector = node.primitive.wall.backSector {
+                    thingFragment.thing.height = backSector.floor.height
+                }
+                else {
+                    thingFragment.thing.height = node.primitive.wall.frontSector.floor.height
+                }
             }
         }
     }
@@ -301,22 +306,17 @@ func place(thingFragment: ThingFragment, in node: BSP<WallFragment>.Node, atPhas
         else {
             node.primitive.rightThingFragments.append(thingFragment)
             if thingFragment.range.contains(0.5) {
-                if let backSector = node.primitive.wall.rightSector {
-                    thingFragment.thing.height = backSector.floor.height
-                }
-                else {
-                    thingFragment.thing.height = node.primitive.wall.leftSector.floor.height
-                }
+                thingFragment.thing.height = node.primitive.wall.frontSector.floor.height
             }
         }
     }
 }
 
-func removeThingFragments(in node: BSP<WallFragment>.Node) {
+func removeThingFragments(from node: BSP<WallFragment>.Node) {
     node.primitive.leftThingFragments.removeAll()
     node.primitive.rightThingFragments.removeAll()
-    if let left = node.left { removeThingFragments(in: left) }
-    if let right = node.right { removeThingFragments(in: right) }
+    if let left = node.left { removeThingFragments(from: left) }
+    if let right = node.right { removeThingFragments(from: right) }
 }
 
 // MARK: - Map
@@ -346,7 +346,7 @@ class Map {
 
     func placeThings(atTime time: Float) {
         if let root = bsp.root {
-            removeThingFragments(in: root)
+            removeThingFragments(from: root)
             for thing in things {
                 place(
                     thingFragment: ThingFragment(ofThing: thing, atAngle: -player.angle),
@@ -367,12 +367,12 @@ class World {
     var phase = Float(0)
     var time = Float(0)
 
-    var screenshotActionsQueue: [([CGImage]) -> Void] = []
+    //    var screenshotActionsQueue: [([CGImage]) -> Void] = []
     weak var map: Map?
 
-    func takeScreenshot(_ action: @escaping ([CGImage]) -> Void) {
-        screenshotActionsQueue.insert(action, at: 0)
-    }
+    //    func takeScreenshot(_ action: @escaping ([CGImage]) -> Void) {
+    //        screenshotActionsQueue.insert(action, at: 0)
+    //    }
 
     init(
         maps: [Map],

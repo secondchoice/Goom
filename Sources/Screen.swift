@@ -98,7 +98,9 @@ class Screen {
     var bytesPerRow: Int { bytesPerPixel * width }
     var byteCount: Int { bytesPerRow * height }
     private var buffer: UnsafeMutablePointer<UInt32>
-    var pixels: UnsafeMutableBufferPointer<UInt32> { .init(start: buffer, count: byteCount / 4) }
+    var pixels: UnsafeMutableBufferPointer<UInt32> {
+        .init(start: buffer, count: byteCount / bytesPerPixel)
+    }
     let fieldOfView = Float.pi / 2
 
     init(width w: Int, height h: Int) {
@@ -126,35 +128,33 @@ class Screen {
         let bitsPerComponent = 8
         let bitsPerPixel = 32
 
-        return pixels.withMemoryRebound(to: UInt8.self) { data -> CGImage? in
-            guard
-                let cfData = CFDataCreate(
-                    kCFAllocatorDefault,
-                    data.baseAddress,
-                    byteCount
-                )
-            else { return nil }
-
-            guard
-                let dataProvider = CGDataProvider(
-                    data: cfData
-                )
-            else { return nil }
-
-            return CGImage(
-                width: width,
-                height: height,
-                bitsPerComponent: bitsPerComponent,
-                bitsPerPixel: bitsPerPixel,
-                bytesPerRow: width * bytesPerPixel,
-                space: rgbColorSpace,
-                bitmapInfo: bitmapInfo,
-                provider: dataProvider,
-                decode: nil,
-                shouldInterpolate: false,
-                intent: .defaultIntent
+        guard
+            let cfData = CFDataCreate(
+                kCFAllocatorDefault,
+                UnsafeRawBufferPointer(pixels).bindMemory(to: UInt8.self).baseAddress,
+                byteCount
             )
-        }
+        else { return nil }
+
+        guard
+            let dataProvider = CGDataProvider(
+                data: cfData
+            )
+        else { return nil }
+
+        return CGImage(
+            width: width,
+            height: height,
+            bitsPerComponent: bitsPerComponent,
+            bitsPerPixel: bitsPerPixel,
+            bytesPerRow: width * bytesPerPixel,
+            space: rgbColorSpace,
+            bitmapInfo: bitmapInfo,
+            provider: dataProvider,
+            decode: nil,
+            shouldInterpolate: false,
+            intent: .defaultIntent
+        )
     }
 }
 
@@ -481,7 +481,7 @@ class MapMTK {
             vertex MapVertex map_vertex_func(uint id [[vertex_id]],
                                              uint instance_id [[instance_id]],
                                              constant float4x4 &transformation [[buffer(1)]],
-                                             constant MapVertex *vertices [[buffer(0)]]) {
+                                             device MapVertex *vertices [[buffer(0)]]) {
                 return MapVertex{ transformation * vertices[id + instance_id*2].pos, vertices[id + instance_id*2].color };
             }
             fragment float4 map_fragment_func(MapVertex point [[stage_in]]) {
@@ -550,7 +550,14 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let world = owner.worldManager.world else { return }
         world.update(with: owner.worldManager.joypad)
-        world.draw(in: owner.worldManager.screen)
+
+        let screenshotsAction = owner.worldManager.popScreenshotsAction()
+        if let screenshots = world.draw(
+            in: owner.worldManager.screen,
+            takingScreenshots: screenshotsAction != nil
+        ) {
+            if let action = screenshotsAction { DispatchQueue.main.async { action(screenshots) } }
+        }
 
         let screen = owner.worldManager.screen
 

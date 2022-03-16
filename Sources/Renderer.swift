@@ -43,7 +43,7 @@ extension World {
         var apertureTop: [Int]
         // Bottom vertical pixel of open span + 1
         var apertureBottom: [Int]
-        var palettes: [[UInt32]] = []
+        var drawables: [Drawable] = []
 
         init(in screen: Screen) {
             self.screen = screen
@@ -181,14 +181,8 @@ extension World {
         }
     }
 
-    func postpone(thingsInFragment fragment: WallFragment, forSide side: Side, in view: View)
-        -> [Drawable]
+    func addDrawables(forThingFragments thingFragments: [ThingFragment], to view: View, in map: Map)
     {
-        guard let map = map else { return [] }
-        var postponed: [Drawable] = []
-        let thingFragments =
-            side == .left ? fragment.leftThingFragments : fragment.rightThingFragments
-
         let posedThingFragments = thingFragments.map {
             (thingFragment: $0, depth: map.player.toCamera(vector: $0.thing.position).y)
         }
@@ -207,7 +201,7 @@ extension World {
 
             let us = Space(begin: 0, end: Float(texture.width)).slice(part: range)
             let vs = Space(begin: Float(texture.height), end: 0)
-            postponed.append(
+            view.drawables.append(
                 Drawable(
                     in: view,
                     texture: texture,
@@ -218,69 +212,76 @@ extension World {
                 )
             )
         }
-        return postponed
     }
 
-    func draw(fragment: WallFragment, in view: View, appending postponed: inout [Drawable])
+    // Called as action during the BSP visit.
+    func draw(fragment: WallFragment, in view: View)
         -> BSP<WallFragment>.VisitState
     {
         guard let map = map else { return .end }
         let screen = view.screen
         let wall = fragment.wall
-        let frontSide = wall.base.side(ofPoint: map.player.position)
-        let wallFacesPlayer = frontSide == .left
+        let nearSide = wall.base.side(ofPoint: map.player.position)  // facing player
 
-        // Postpone drawing things in front of this plane.
-        postponed += postpone(
-            thingsInFragment: fragment,
-            forSide: wallFacesPlayer ? .left : .right,
-            in: view
+        // Queue the "near" thing fragments for drawing in the second phase.
+        addDrawables(
+            forThingFragments: nearSide == .left
+                ? fragment.leftThingFragments : fragment.rightThingFragments,
+            to: view,
+            in: map
         )
 
-        // Obtain the wall fragment base in the camera coordinates.
+        // Obtain the wall fragment's base in camera coordinates.
         var base = map.player.toCamera(segment: wall.base.slice(part: fragment.range))
         let sa = sin(map.player.angle)
         let ca = cos(map.player.angle)
 
-        // Cull the entire subtree containing this wall fragment if possible.
+        // If the frustrum is entirely on the near side of the BSP split,
+        // then the BSP children (and their associated things) on the "far"
+        // side of the split are invisible and can be culled by returning
+        // `.cull` (this still processes the children on the "near" side).
+        // As for the things associated to this BSP node, only the ones on
+        // the "near" side require drawing and are thus queued.
         do {
-            // Intersection with x=0:
-            //
-            // (x2 - x1) l + x1 = x
-            // (z2 - z1) l + z1 = z
-            // z = z1 + (z2 - z1)/(x2 - x1) * (x - x1)
-            // z = (z1 - (z2 - z1)/(x2 - x1) * x1) + (z2 - z1)/(x2 - x1) * x
-            // z = (z1 - slope * x1) + slope * x
-            // slope = (z2 - z1)/(x2 - x1)
-            let x1 = base.v1.x
-            let z1 = base.v1.y
-            let x2 = base.v2.x
-            let z2 = base.v2.y
-            let threshold = Float(0.00001)
+            let baseLine = Line(containing: base)
             let halfWidth = Float(view.width) / 2
-            if abs(x2 - x1) > threshold {
-                let slope = (z2 - z1) / (x2 - x1)
-                if z1 - slope * x1 < -threshold, abs(slope) <= (halfWidth / view.focalLength) {
+            let a = dot(baseLine.normal, Vector(x: +halfWidth, y: view.focalLength))
+            let b = dot(baseLine.normal, Vector(x: -halfWidth, y: view.focalLength))
+            if nearSide == .left {
+                // If the player (i.e., the frustrum's origin) is to the left of
+                // the split, then check if the rays bounding the
+                // frustrum are also both to the left.
+                if a >= 0 && b >= 0 {
+                    // The frustrum is all to the left of the split. Cull
+                    // the BSP children to the right (i.e., the "far" ones).
+                    return .cull
+                }
+            }
+            else {
+                // Check if frustrum all to the right of the split.
+                if a <= 0 && b <= 0 {
                     return .cull
                 }
             }
         }
 
-        // Postpone drawing thing behind this plane.
+        // Queue the "far" thing fragments for drawing in the second phase,
+        // but after any see-through wall texture (this is why we use `defer`).
         defer {
-            postponed += postpone(
-                thingsInFragment: fragment,
-                forSide: wallFacesPlayer ? .right : .left,
-                in: view
+            addDrawables(
+                forThingFragments: nearSide == .left
+                    ? fragment.rightThingFragments : fragment.leftThingFragments,
+                to: view,
+                in: map
             )
         }
 
-        // Clip the wall fragment base to the frustrum.
+        // Clip the wall fragment to the view frustrum.
         var range = fragment.range
         view.clip(segment: &base, range: &range)
         if range.isEmpty { return .more }
 
-        // Project the wall fragment base to the image plane.
+        // Project the wall fragment's base to the image plane.
         let depth1 = base.v1.y
         let depth2 = base.v2.y
         let inverseDepthSpace = Space(begin: 1 / depth1, end: 1 / depth2)
@@ -294,14 +295,14 @@ extension World {
         assert(xlp <= xrp)
         assert(xrp <= view.width)
 
+        // Loop through the columns of the clipped wall fragment and draw them.
         for xp in xlp..<xrp {
             let xc = Float(xp) + view.x0c
             let alpha = (xc - x1c) / (x2c - x1c)
             let inverseDepth = inverseDepthSpace[alpha]
             let depth = 1 / inverseDepth
-            let lambdaFragment = alpha * depth * inverseDepthSpace.end
             let depthIndex = max(0, depth - view.minDepth) / (view.maxDepth - view.minDepth)
-
+            let lambdaFragment = alpha * depth * inverseDepthSpace.end
             let lambda = (range.upperBound - range.lowerBound) * lambdaFragment + range.lowerBound
 
             func project(y: Float) -> Float {
@@ -407,22 +408,22 @@ extension World {
             let top: Float = 100_000
             let bottom: Float = -100_000
 
-            if wall.rightSector == nil {
+            if wall.backSector == nil {
                 // Draw a solid wall.
-                if frontSide == .left {
-                    let frontSector = wall.leftSector
+                if nearSide == .right {
+                    let frontSector = wall.frontSector
                     let frontCeiling = project(y: frontSector.ceiling.height)
                     let frontFloor = project(y: frontSector.floor.height)
-                    draw(flat: wall.leftSector.ceiling, top, frontCeiling)
-                    draw(flat: wall.leftSector.floor, frontFloor, bottom)
+                    draw(flat: wall.frontSector.ceiling, top, frontCeiling)
+                    draw(flat: wall.frontSector.floor, frontFloor, bottom)
                     draw(wall: wall.middle, frontCeiling, frontFloor)
                 }
             }
             else {
                 // Draw a wall with an open mid section.
                 let (frontSector, backSector) =
-                    (frontSide == .left)
-                    ? (wall.leftSector, wall.rightSector!) : (wall.rightSector!, wall.leftSector)
+                    (nearSide == .right)
+                    ? (wall.frontSector, wall.backSector!) : (wall.backSector!, wall.frontSector)
                 let frontCeiling = project(y: frontSector.ceiling.height)
                 let frontFloor = project(y: frontSector.floor.height)
                 let backCeiling = project(y: backSector.ceiling.height)
@@ -434,7 +435,7 @@ extension World {
                 let skipTopFlat =
                     skipTopWall && (frontSector.ceiling.height < backSector.ceiling.height)
 
-                // Draw both flats first as, when the aperture is negative (e.g. elevator),
+                // Draw both flats first as, when the aperture is negative (e.g., elevator),
                 // they may occlude the walls.
                 if !skipTopFlat { draw(flat: frontSector.ceiling, top, frontCeiling) }
                 draw(flat: frontSector.floor, frontFloor, bottom)
@@ -445,17 +446,17 @@ extension World {
             }
         }
 
-        // Draw a semi-transparent mid wall.
-        if wall.rightSector != nil, let texture = wall.middle.texture {
+        // Draw a see-through mid wall (e.g., a mesh).
+        if wall.backSector != nil, let texture = wall.middle.texture {
             let heights = (
-                max(wall.leftSector.floor.height, wall.rightSector!.floor.height)
+                max(wall.frontSector.floor.height, wall.backSector!.floor.height)
                     - map.player.height,
-                min(wall.leftSector.ceiling.height, wall.rightSector!.ceiling.height)
+                min(wall.frontSector.ceiling.height, wall.backSector!.ceiling.height)
                     - map.player.height
             )
             let us = wall.middle.uSpace.slice(part: range)
             let vs = wall.middle.vSpace
-            postponed.append(
+            view.drawables.append(
                 Drawable(
                     in: view,
                     texture: texture,
@@ -470,8 +471,8 @@ extension World {
         return .more
     }
 
-    func draw(in screen: Screen) {
-        guard let map = map else { return }
+    func draw(in screen: Screen, takingScreenshots: Bool = false) -> [CGImage]? {
+        guard let map = map else { return nil }
 
         // Reposition the player on top of the floor under them.
         map.bsp.root?.visit(
@@ -490,26 +491,25 @@ extension World {
         map.placeThings(atTime: phase)
 
         let view = View(in: screen)
-        var postponed: [Drawable] = []
         var numDrawn = 0
         let maxNumDrawn = 2000
         var checkPeriodMask = 1
 
-        var screenShots: [CGImage] = []
-        var screenShotChecksum: UInt32 = 1
+        var screenshots: [CGImage] = []
+        var lastScreenshotChecksum: UInt32 = 1
 
         func takeScreenshot() {
-            guard self.screenshotActionsQueue.count > 0, screenShots.count < 100 else { return }
+            guard takingScreenshots, screenshots.count < 100 else { return }
             let sum = checksum(of: UnsafeBufferPointer<UInt32>(screen.pixels))
-            if sum != screenShotChecksum {
-                screenShotChecksum = sum
+            if sum != lastScreenshotChecksum {
+                lastScreenshotChecksum = sum
                 if let image = screen.toCGImage() {
-                    screenShots.append(image)
+                    screenshots.append(image)
                 }
             }
         }
 
-        if self.screenshotActionsQueue.count > 0 {
+        if takingScreenshots {
             screen.fill()
         }
         takeScreenshot()
@@ -519,7 +519,7 @@ extension World {
             nearestFirst: true,
             action: {
                 fragment in
-                let state = draw(fragment: fragment, in: view, appending: &postponed)
+                let state = draw(fragment: fragment, in: view)
                 numDrawn += 1
                 if numDrawn & checkPeriodMask == 0 {
                     if zip(view.apertureTop, view.apertureBottom).allSatisfy({ $0.0 >= $0.1 }) {
@@ -532,7 +532,7 @@ extension World {
             }
         )
 
-        for drawable in postponed.reversed() {
+        for drawable in view.drawables.reversed() {
             drawable.draw(in: view, withPalettes: palettes)
             takeScreenshot()
         }
@@ -552,8 +552,6 @@ extension World {
             $0.ceiling.set(phase: phase)
         }
 
-        if let action = self.screenshotActionsQueue.popLast() {
-            action(screenShots)
-        }
+        return takingScreenshots ? screenshots : nil
     }
 }

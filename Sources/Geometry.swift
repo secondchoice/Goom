@@ -38,6 +38,10 @@ enum Side {
     case right
 }
 
+prefix func ~ (side: Side) -> Side {
+    return side == .left ? .right : .left
+}
+
 // MARK: - Vector
 
 /// A `Vectory` defines the addition, subtraction, right scalar multiplication, and inner product operations.
