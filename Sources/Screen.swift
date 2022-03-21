@@ -357,7 +357,7 @@ private class Buffer<T> {
     }
 }
 
-class MapMTK {
+class MapDisplayMTK {
     private let screenMtk: ScreenMTKViewCoordinator
     private var mapVertexBuffer: Buffer<MapVertex>
     private var playerVertexBuffer: Buffer<MapVertex>
@@ -382,7 +382,7 @@ class MapMTK {
 
     private let transformationDataSize = MemoryLayout<float4x4>.stride
 
-    func makeRenderPassDescriptor(drawable: CAMetalDrawable) -> MTLRenderPassDescriptor {
+    private func makeRenderPassDescriptor(drawable: CAMetalDrawable) -> MTLRenderPassDescriptor {
         let renderPassDescriptor = MTLRenderPassDescriptor()
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture
         renderPassDescriptor.colorAttachments[0].loadAction = .load
@@ -522,7 +522,7 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
     private var textureSemaphore = DispatchSemaphore(value: 1)
     fileprivate var drawableSize = CGSize()
 
-    private var map: MapMTK? = nil
+    private var mapDisplay: MapDisplayMTK? = nil
 
     init(_ owner: ScreenView) {
         device = MTLCreateSystemDefaultDevice()
@@ -530,7 +530,7 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
         self.owner = owner
         super.init()
         initMetal()
-        self.map = MapMTK(self)
+        self.mapDisplay = MapDisplayMTK(self)
     }
 
     func setup(screenMTKView: ScreenMTKView) {
@@ -586,7 +586,7 @@ class ScreenMTKViewCoordinator: NSObject, MTKViewDelegate {
         rce.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4, instanceCount: 1)
         rce.endEncoding()
 
-        map?.draw(in: view, with: cbu)
+        mapDisplay?.draw(in: view, with: cbu)
 
         cbu.present(drw)
         cbu.addCompletedHandler { [weak self] _ in
